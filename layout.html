@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儀器預約系統 / Instrument Booking System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --nav-bg: #ffffff;
+            --text-main: #202124;
+            --text-sub: #5f6368;
+            --accent-blue: #1a73e8;
+            --border-gray: #dadce0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #ffffff; /* 截圖背景多為純白或極淺灰 */
+            color: var(--text-main);
+        }
+
+        /* 導覽列容器 */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 40px;
+            background-color: var(--nav-bg);
+            border-bottom: 1px solid var(--border-gray);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* 左側標題區 */
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .nav-brand a {
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
+
+        /* 中間選單連結 (若需要可開啟) */
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-size: 15px;
+            font-weight: 400;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: var(--accent-blue);
+        }
+
+        /* 右側操作者選單 */
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        .user-label {
+            font-weight: 400;
+        }
+
+        .user-select {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-gray);
+            background-color: #ffffff;
+            font-family: inherit;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .user-select:hover {
+            border-color: var(--accent-blue);
+        }
+
+        /* 內容容器 */
+        .main-content {
+            padding: 20px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 常用小元件：點 */
+        .status-dot {
+            width: 4px;
+            height: 18px;
+            border-radius: 2px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">儀器預約系統 / Instrument Booking System</a>
+        </div>
+
+        <div class="nav-links">
+            <a href="/bsc">BSC 預約</a>
+            <a href="/freezer">漸凍盒管理</a>
+            <a href="/ihc">IHC 排程</a>
+            <a href="/manage_users">人員管理</a>
+        </div>
+
+        <div class="user-section">
+            <span class="user-label">操作者 / User:</span>
+            <form action="/set_user" method="POST" id="globalUserForm" style="margin: 0;">
+                <select name="user_name" class="user-select" onchange="document.getElementById('globalUserForm').submit()">
+                    <option value="">-- 選擇使用者 / Select User --</option>
+                    {% for u in users %}
+                        <option value="{{ u.name }}" {% if current_user == u.name %}selected{% endif %}>{{ u.name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+</body>
+</html>

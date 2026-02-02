@@ -1,0 +1,208 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    :root {
+        --border-color: #dee2e6;
+        --bsc1-color: #3498db; --bsc1-light: #f0f7ff;
+        --bsc2-color: #2ecc71; --bsc2-light: #f0fff4;
+        --bsc3-color: #f39c12; --bsc3-light: #fff9f0;
+        --bsc4-color: #9b59b6; --bsc4-light: #fcf5ff;
+        /* 在這裡定義一個全域表格字體大小 */
+        --grid-font-size: 11px;
+    }
+
+    /* 限制整體高度在螢幕內 */
+    .table-card { 
+        background: #fff; border: 1px solid var(--border-color); border-radius: 0 12px 12px 12px; 
+        padding: 10px 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        height: 82vh; 
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .tab-container { display: flex; gap: 8px; margin-bottom: -1px; padding-left: 10px; }
+    .tab { padding: 10px 25px; cursor: pointer; background: #e0e0e0; border-radius: 12px 12px 0 0; border: 1px solid var(--border-color); font-weight: bold; color: #666; font-size: 14px; }
+    .tab.active { background: #fff; border-bottom: 2px solid #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+    
+    .tab:nth-child(1).active { color: var(--bsc1-color); border-top: 4px solid var(--bsc1-color); }
+    .tab:nth-child(2).active { color: var(--bsc2-color); border-top: 4px solid var(--bsc2-color); }
+    .tab:nth-child(3).active { color: var(--bsc3-color); border-top: 4px solid var(--bsc3-color); }
+    .tab:nth-child(4).active { color: var(--bsc4-color); border-top: 4px solid var(--bsc4-color); }
+
+    .bsc-responsive-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        user-select: none;
+    }
+
+    .grid-header { display: flex; margin-left: 100px; }
+    .date-header {
+        flex: 1; margin: 1px;
+        color: white; padding: 6px 2px; border-radius: 6px; text-align: center;
+        min-width: 0; 
+    }
+    /* 修正 1: 日期字體大小均等 */
+    .date-text { font-size: var(--grid-font-size); font-weight: bold; display: block; }
+    .day-text { font-size: 9px; opacity: 0.9; }
+
+    .grid-body { display: flex; flex: 1; overflow: hidden; }
+
+    .time-column { width: 100px; display: flex; flex-direction: column; }
+    /* 修正 2: 時間標籤字體大小均等 */
+    .time-label {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        font-size: var(--grid-font-size); font-weight: bold; color: #777; border-bottom: 1px solid #f8f9fa;
+    }
+
+    .slots-wrapper { display: flex; flex: 1; }
+    .date-column { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    /* 修正 3: 格子內人名字體大小均等 */
+    .slot-cell { 
+        flex: 1; margin: 1px; border-radius: 4px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: var(--grid-font-size); cursor: cell; transition: 0.1s;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .slot-cell.selecting { opacity: 0.5; outline: 2px dashed #333; z-index: 10; }
+
+    #bsc1 .date-header { background: var(--bsc1-color); } #bsc1 .slot-cell { background: var(--bsc1-light); }
+    #bsc2 .date-header { background: var(--bsc2-color); } #bsc2 .slot-cell { background: var(--bsc2-light); }
+    #bsc3 .date-header { background: var(--bsc3-color); } #bsc3 .slot-cell { background: var(--bsc3-light); }
+    #bsc4 .date-header { background: var(--bsc4-color); } #bsc4 .slot-cell { background: var(--bsc4-light); }
+
+    .booked-cell { background: #ffebee !important; color: #c62828 !important; font-weight: bold; }
+    .my-cell { background: #fff9c4 !important; color: #f57f17 !important; border: 1px solid #fbc02d; }
+</style>
+
+<div class="tab-container">
+    {% for i in range(1, 5) %}
+    <div class="tab {{ 'active' if i == 1 }}" onclick="openTab(event, 'bsc{{ i }}')">BSC {{ i }}</div>
+    {% endfor %}
+</div>
+
+<div class="table-card">
+    <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 13px; color: #666; font-weight: bold;">💡 提示：點擊並「拖曳」可連續選取預約，結束後請點擊 Submit 送出。</span>
+        <button onclick="submitBatch()" style="background: #202124; color: white; padding: 6px 18px; border-radius: 6px; cursor: pointer; border: none; font-weight: bold;">送出變更 / Submit</button>
+    </div>
+
+    {% for bsc_id in range(1, 5) %}
+    <div id="bsc{{ bsc_id }}" class="tab-content {{ 'active' if bsc_id == 1 }}" style="display: {{ 'block' if bsc_id == 1 else 'none' }}; height: 100%;">
+        <div class="bsc-responsive-container">
+            <div class="grid-header">
+                {% for d in dates %}
+                <div class="date-header">
+                    <span class="date-text">{{ d.strftime('%m/%d') }}</span>
+                    <span class="day-text">{{ d.strftime('%a') }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="grid-body">
+                <div class="time-column">
+                    {% for h in range(6, 22) %}
+                    <div class="time-label">{{ "%02d:00" | format(h) }} - {{ "%02d:00" | format(h+1) }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="slots-wrapper">
+                    {% for d in dates %}
+                    <div class="date-column">
+                        {% for h in range(6, 22) %}
+                            {% set slot_key = (d, h) %}
+                            {% set is_booked = slot_key in booked[bsc_id] %}
+                            {% set reserved_user = booked[bsc_id][slot_key] if is_booked else "" %}
+                            
+                            <div class="slot-cell {{ 'booked-cell' if is_booked }} {{ 'my-cell' if reserved_user == current_user }}"
+                                 data-bsc="{{ bsc_id }}" data-date="{{ d.strftime('%Y-%m-%d') }}" data-slot="{{ h }}"
+                                 data-status="{{ 'reserved' if is_booked else 'free' }}"
+                                 data-owner="{{ 'me' if reserved_user == current_user else 'others' }}">
+                                {{ reserved_user if is_booked }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    let isMouseDown = false;
+    let mode = null;
+    let selectedSlots = new Set();
+
+    function initSelection() {
+        document.querySelectorAll('.slot-cell').forEach(cell => {
+            cell.addEventListener('mousedown', (e) => {
+                if ("{{ current_user }}" === "") return alert("請先在右上角選取使用者！");
+                isMouseDown = true;
+                const status = cell.dataset.status;
+                const owner = cell.dataset.owner;
+
+                if (status === 'free') mode = 'reserve';
+                else if (status === 'reserved' && owner === 'me') mode = 'cancel';
+                else { isMouseDown = false; return; }
+                
+                toggleCell(cell);
+            });
+
+            cell.addEventListener('mouseenter', () => {
+                if (!isMouseDown || !mode) return;
+                const status = cell.dataset.status;
+                const owner = cell.dataset.owner;
+
+                if (mode === 'reserve' && status === 'free') toggleCell(cell);
+                else if (mode === 'cancel' && status === 'reserved' && owner === 'me') toggleCell(cell);
+            });
+        });
+    }
+
+    document.addEventListener('mouseup', () => { isMouseDown = false; });
+
+    function toggleCell(cell) {
+        const id = `${cell.dataset.bsc}|${cell.dataset.date}|${cell.dataset.slot}`;
+        if (selectedSlots.has(id)) {
+            selectedSlots.delete(id);
+            cell.classList.remove('selecting');
+        } else {
+            selectedSlots.add(id);
+            cell.classList.add('selecting');
+        }
+    }
+
+    async function submitBatch() {
+        if (selectedSlots.size === 0) return alert("尚未選取任何時段");
+        const data = Array.from(selectedSlots).map(s => {
+            const [bsc, date, slot] = s.split('|');
+            return { bsc, date, slot, mode };
+        });
+
+        const response = await fetch('/bsc_batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: data })
+        });
+
+        if (response.ok) window.location.reload();
+        else alert("更新失敗");
+    }
+
+    function openTab(evt, tabId) {
+        document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = "none");
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove("active"));
+        document.getElementById(tabId).style.display = "block";
+        evt.currentTarget.classList.add("active");
+        selectedSlots.clear();
+        document.querySelectorAll('.slot-cell').forEach(c => c.classList.remove('selecting'));
+    }
+
+    initSelection();
+</script>
+{% endblock %}

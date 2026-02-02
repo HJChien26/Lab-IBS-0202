@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .ihc-table { width: 100%; border-collapse: collapse; text-align: center; }
+    .ihc-table th, .ihc-table td { border: 1px solid #ddd; padding: 15px; }
+    .full { background-color: #f8d7da; color: #721c24; }
+    .available { background-color: #d4edda; color: #155724; }
+</style>
+
+<h2>🧪 IHC 染色機預約 (托盤限制)</h2>
+<p>日期：<strong>{{ today }}</strong> | 使用者：<strong>{{ current_user or '請先選取姓名' }}</strong></p>
+
+<table class="ihc-table">
+    <thead>
+        <tr style="background:#f2f2f2;">
+            <th>時段梯次</th>
+            <th>目前已佔用托盤</th>
+            <th>預約操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in slots %}
+        {% set current_trays = usage[s] %}
+        <tr class="{{ 'full' if current_trays >= 3 else 'available' }}">
+            <td><strong>{{ s }}</strong></td>
+            <td>{{ current_trays }} / 3</td>
+            <td>
+                {% if current_trays < 3 and current_user %}
+                <form method="POST">
+                    <input type="hidden" name="slot" value="{{ s }}">
+                    需使用：
+                    <select name="trays">
+                        {% for i in range(1, (4 - current_trays)|int) %}
+                        <option value="{{ i }}">{{ i }} 托盤</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">確認預約</button>
+                </form>
+                {% elif not current_user %}
+                    <small>請先在上方選取使用者</small>
+                {% else %}
+                    <strong>時段已額滿</strong>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

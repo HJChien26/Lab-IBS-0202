@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    /* 容器與標題 */
+    .dashboard-container {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    .welcome-msg {
+        color: #70757a;
+        font-size: 16px;
+        margin-bottom: 40px;
+        letter-spacing: 0.5px;
+    }
+
+    /* 卡片容器 */
+    .card-grid {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    /* 基礎卡片樣式 */
+    .instrument-card {
+        width: 320px;
+        height: 340px;
+        border-radius: 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: 2px solid transparent;
+        position: relative;
+    }
+
+    .instrument-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+    }
+
+    /* 各別卡片配色 (參考截圖色調) */
+    .card-bsc { 
+        background-color: #fffdf0; 
+        border-color: #ffecb3; 
+    }
+    .card-freezer { 
+        background-color: #f0faff; 
+        border-color: #b3e5fc; 
+    }
+    .card-ihc { 
+        background-color: #f8f4ff; 
+        border-color: #e1d5f5; 
+    }
+
+    /* 圖示與文字細節 */
+    .card-icon {
+        font-size: 90px;
+        margin-bottom: 25px;
+        display: block;
+    }
+    
+    .card-title {
+        font-size: 26px;
+        font-weight: bold;
+        margin: 5px 0;
+    }
+    
+    .card-subtitle {
+        font-size: 14px;
+        color: #8d9499;
+        font-weight: normal;
+    }
+
+    /* 針對不同卡片的文字顏色加強 */
+    .card-bsc .card-title { color: #855c1b; }
+    .card-freezer .card-title { color: #006097; }
+    .card-ihc .card-title { color: #5a3a91; }
+
+</style>
+
+<div class="dashboard-container">
+    <div class="welcome-msg">Select Instrument to Start Booking</div>
+
+    <div class="card-grid">
+        <a href="/bsc" class="instrument-card card-bsc">
+            <span class="card-icon">☣️</span>
+            <div class="card-title">BSC 生物安全櫃</div>
+            <div class="card-subtitle">Biological Safety Cabinet</div>
+        </a>
+
+        <a href="/freezer" class="instrument-card card-freezer">
+            <span class="card-icon">❄️</span>
+            <div class="card-title">細胞漸凍盒</div>
+            <div class="card-subtitle">Cell Freezing Container</div>
+        </a>
+
+        <a href="/ihc" class="instrument-card card-ihc">
+            <span class="card-icon">✺</span>
+            <div class="card-title">IHC 染色系統</div>
+            <div class="card-subtitle">IHC Staining System</div>
+        </a>
+    </div>
+</div>
+{% endblock %}
