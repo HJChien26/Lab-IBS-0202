@@ -1,22 +1,22 @@
 {% extends "layout.html" %}
 {% block content %}
 <style>
-    /* 基礎佈局 */
+    /* 基礎佈局：限制頁面高度為視窗的 85%，並使用彈性佈局 */
     .freezer-page { height: 85vh; display: flex; flex-direction: column; gap: 15px; }
     .main-layout { display: flex; gap: 20px; flex: 1; min-height: 0; }
 
-    /* 左右分流群組樣式 */
+    /* 左右分流群組樣式：分為「使用中」與「可借用」兩區 */
     .status-group { flex: 1; border-radius: 20px; border: 1px solid #eee; padding: 15px; display: flex; flex-direction: column; overflow: hidden; }
-    .group-inuse { background-color: #fffaf0; border-color: #fbd38d; }
-    .group-available { background-color: #ebf8ff; border-color: #90cdf4; }
+    .group-inuse { background-color: #fffaf0; border-color: #fbd38d; } /* 使用中區域背景為米黃色 */
+    .group-available { background-color: #ebf8ff; border-color: #90cdf4; } /* 可借用區域背景為淡藍色 */
 
     .status-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: bold; margin-bottom: 12px; color: #4a5568; }
     .dot { width: 4px; height: 16px; border-radius: 2px; }
 
-    /* 網格系統：固定一排 7 個 */
+    /* 網格系統：強制每一排顯示 7 個盒子 */
     .box-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; overflow-y: auto; padding: 5px; }
 
-    /* 方塊基礎樣式 */
+    /* 盒子方塊基礎樣式 */
     .box-square {
         aspect-ratio: 1/1; border-radius: 12px; border: 1.5px solid #e2e8f0;
         position: relative; display: flex; flex-direction: column;
@@ -26,12 +26,13 @@
     }
     .box-square:hover { transform: translateY(-2px); z-index: 5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-    /* --- 核心修復：顏色識別標籤 (偵測開頭第一個字母) --- */
+    /* --- 核心邏輯：顏色識別標籤 (根據盒子編號的第一個字母自動變換右上角圓點顏色) --- */
     .color-indicator { 
         position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; 
         border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); 
         background-color: #cbd5e0 !important; z-index: 3;
     }
+    /* 這裡使用了屬性選取器 data-name^="字母" (不分大小寫 i) */
     /* R紅 Y黃 B藍 G綠 O橘 C青 M洋紅 K黑 W白 */
     .box-square[data-name^="r" i] .color-indicator { background-color: #f56565 !important; }
     .box-square[data-name^="y" i] .color-indicator { background-color: #f6e05e !important; }
@@ -43,18 +44,21 @@
     .box-square[data-name^="k" i] .color-indicator { background-color: #2d3748 !important; }
     .box-square[data-name^="w" i] .color-indicator { background-color: #ffffff !important; border: 1px solid #cbd5e0; }
 
+    /* 盒子內文字樣式 */
     .box-name { font-size: 13px; font-weight: 800; color: #2d3748; }
     .box-user { font-size: 11px; color: #4a5568; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 90%; }
     .day-info { font-size: 10px; margin-top: 3px; }
-    .text-overdue { color: #c53030; font-weight: 900; }
-    .text-safe { color: #2f855a; font-weight: 600; }
+    .text-overdue { color: #c53030; font-weight: 900; } /* 逾期天數顯示紅色 */
+    .text-safe { color: #2f855a; font-weight: 600; }    /* 正常天數顯示綠色 */
 
-    /* 逾期閃爍 */
+    /* 逾期動畫：當借用超過 7 天時會呈現紅框閃爍警示 */
     @keyframes alarm-blink { 0% { border-color: #e2e8f0; } 50% { border-color: #f56565; box-shadow: 0 0 10px rgba(245,101,101,0.4); } 100% { border-color: #e2e8f0; } }
     .is-overdue { animation: alarm-blink 1.5s infinite; border-width: 2.5px !important; }
+    
+    /* 覆蓋層按鈕：讓整個方塊都可以被點擊，而不影響內文排版 */
     .overlay-btn { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; border: none; cursor: pointer; z-index: 2; }
 
-    /* 管理面板修正 */
+    /* 底部管理面板修正 (摺疊面板式設計) */
     .admin-details { margin-top: 15px; border-radius: 15px; background: #edf2f7; border: 1px solid #cbd5e0; flex-shrink: 0; }
     .admin-summary { padding: 12px 20px; background: #e2e8f0; cursor: pointer; font-size: 14px; font-weight: bold; color: #2d3748; list-style: none; display: flex; justify-content: space-between; border-radius: 15px; }
     .admin-details[open] .admin-summary { border-radius: 15px 15px 0 0; }
@@ -63,7 +67,7 @@
     .add-form { display: flex; gap: 10px; justify-content: center; padding-bottom: 10px; border-bottom: 1px solid #cbd5e0; }
     .admin-input { padding: 8px 15px; border-radius: 8px; border: 1px solid #cbd5e0; width: 450px; }
     
-    /* 管理清單 */
+    /* 管理清單網格 */
     .box-manager-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
     .manage-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
     .btn-del-text { background: none; border: none; color: #e53e3e; cursor: pointer; font-weight: bold; font-size: 18px; }
@@ -135,14 +139,20 @@
 </div>
 
 <script>
+    // --- 管理面板自動化行為 ---
     const adminPanel = document.getElementById('adminPanel');
     let timer;
+
+    // 當面板被打開或有任何活動（滑鼠移動、按鍵）時，重置計時器
     function startTimer() {
         clearTimeout(timer);
         if (adminPanel.open) {
+            // 如果 15 秒內無人操作，則自動關閉管理面板以節省畫面空間並防止誤觸
             timer = setTimeout(() => { adminPanel.open = false; }, 15000);
         }
     }
+
+    // 監聽面板狀態切換及各種使用者活動
     adminPanel.addEventListener('toggle', startTimer);
     ['mousemove', 'keydown', 'click'].forEach(e => adminPanel.addEventListener(e, startTimer));
 </script>
