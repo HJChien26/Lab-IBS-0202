@@ -10,7 +10,7 @@
     .group-inuse { background-color: #fffaf0; border-color: #fbd38d; } /* 使用中區域背景為米黃色 */
     .group-available { background-color: #ebf8ff; border-color: #90cdf4; } /* 可借用區域背景為淡藍色 */
 
-    .status-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: bold; margin-bottom: 12px; color: #4a5568; }
+    .status-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #4a5568; }
     .dot { width: 4px; height: 16px; border-radius: 2px; }
 
     /* 網格系統：強制每一排顯示 7 個盒子 */
@@ -26,14 +26,19 @@
     }
     .box-square:hover { transform: translateY(-2px); z-index: 5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-    /* --- 核心邏輯：顏色識別標籤 (根據盒子編號的第一個字母自動變換右上角圓點顏色) --- */
+    /* --- 核心邏輯：顏色識別標籤 (已修改為百分比縮放) --- */
     .color-indicator { 
-        position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; 
-        border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); 
-        background-color: #cbd5e0 !important; z-index: 3;
+        position: absolute; 
+        top: 6%; 
+        right: 6%; 
+        width: 12%; 
+        height: 12%; 
+        border-radius: 50%; 
+        border: 1px solid rgba(0,0,0,0.1); 
+        background-color: #cbd5e0 !important; 
+        z-index: 3;
     }
     /* 這裡使用了屬性選取器 data-name^="字母" (不分大小寫 i) */
-    /* R紅 Y黃 B藍 G綠 O橘 C青 M洋紅 K黑 W白 */
     .box-square[data-name^="r" i] .color-indicator { background-color: #f56565 !important; }
     .box-square[data-name^="y" i] .color-indicator { background-color: #f6e05e !important; }
     .box-square[data-name^="b" i] .color-indicator { background-color: #4299e1 !important; }
@@ -45,9 +50,9 @@
     .box-square[data-name^="w" i] .color-indicator { background-color: #ffffff !important; border: 1px solid #cbd5e0; }
 
     /* 盒子內文字樣式 */
-    .box-name { font-size: 13px; font-weight: 800; color: #2d3748; }
-    .box-user { font-size: 11px; color: #4a5568; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 90%; }
-    .day-info { font-size: 10px; margin-top: 3px; }
+    .box-name { font-size: 14px; font-weight: 800; color: #2d3748; }
+    .box-user { font-size: 12px; color: #4a5568; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 90%; margin-top: 2px; }
+    .day-info { font-size: 10px; margin-top: 3px; transform: scale(0.95); }
     .text-overdue { color: #c53030; font-weight: 900; } /* 逾期天數顯示紅色 */
     .text-safe { color: #2f855a; font-weight: 600; }    /* 正常天數顯示綠色 */
 
@@ -60,7 +65,7 @@
 
     /* 底部管理面板修正 (摺疊面板式設計) */
     .admin-details { margin-top: 15px; border-radius: 15px; background: #edf2f7; border: 1px solid #cbd5e0; flex-shrink: 0; }
-    .admin-summary { padding: 12px 20px; background: #e2e8f0; cursor: pointer; font-size: 14px; font-weight: bold; color: #2d3748; list-style: none; display: flex; justify-content: space-between; border-radius: 15px; }
+    .admin-summary { padding: 12px 20px; background: #e2e8f0; cursor: pointer; font-size: 15px; font-weight: bold; color: #2d3748; list-style: none; display: flex; justify-content: space-between; border-radius: 15px; }
     .admin-details[open] .admin-summary { border-radius: 15px 15px 0 0; }
     
     .admin-content { padding: 15px; display: flex; flex-direction: column; gap: 15px; max-height: 220px; overflow-y: auto; }
@@ -76,7 +81,10 @@
 <div class="freezer-page">
     <div class="main-layout">
         <div class="status-group group-inuse">
-            <div class="status-title"><div class="dot" style="background: #ecc94b;"></div>使用中 ({{ in_use_boxes|length }})</div>
+            <div class="status-title">
+                <div class="dot" style="background: #ecc94b;"></div>
+                使用中 In Use ({{ in_use_boxes|length }})
+            </div>
             <div class="box-grid">
                 {% for b in in_use_boxes %}
                 <div class="box-square {{ 'is-overdue' if b.days_used >= 7 }}" data-name="{{ b.box_name }}">
@@ -84,10 +92,13 @@
                     <div class="box-name">{{ b.box_name }}</div>
                     <div class="box-user">{{ b.user_name }}</div>
                     <div class="day-info">
-                        {% if b.days_used >= 7 %}<span class="text-overdue">逾期 {{ b.overdue_days }}d</span>
-                        {% else %}<span class="text-safe">已借 {{ b.days_used }}d</span>{% endif %}
+                        {% if b.days_used >= 7 %}
+                            <span class="text-overdue">逾期 Overdue {{ b.overdue_days }}d</span>
+                        {% else %}
+                            <span class="text-safe">已借 Used {{ b.days_used }}d</span>
+                        {% endif %}
                     </div>
-                    <form method="POST" onsubmit="return confirm('確認歸還「{{ b.box_name }}」？')">
+                    <form method="POST" onsubmit="return confirm('確認歸還「{{ b.box_name }}」？ \nConfirm return of box {{ b.box_name }}?')">
                         <input type="hidden" name="box_id" value="{{ b.id }}"><button type="submit" name="return_box" class="overlay-btn"></button>
                     </form>
                 </div>
@@ -96,7 +107,10 @@
         </div>
 
         <div class="status-group group-available">
-            <div class="status-title"><div class="dot" style="background: #4299e1;"></div>可借用 ({{ available_boxes|length }})</div>
+            <div class="status-title">
+                <div class="dot" style="background: #4299e1;"></div>
+                可借用 Available ({{ available_boxes|length }})
+            </div>
             <div class="box-grid">
                 {% for b in available_boxes %}
                 <div class="box-square" data-name="{{ b.box_name }}">
@@ -104,7 +118,7 @@
                     <div class="box-name">{{ b.box_name }}</div>
                     <form method="POST">
                         <input type="hidden" name="box_id" value="{{ b.id }}">
-                        <button type="submit" name="use_box" class="overlay-btn" {% if not current_user %}onclick="alert('請先選取使用者！'); return false;"{% endif %}></button>
+                        <button type="submit" name="use_box" class="overlay-btn" {% if not current_user %}onclick="alert('請先選取使用者！ \nPlease select a user first!'); return false;"{% endif %}></button>
                     </form>
                 </div>
                 {% endfor %}
@@ -113,20 +127,23 @@
     </div>
 
     <details class="admin-details" id="adminPanel">
-        <summary class="admin-summary">⚙️ 庫存清單管理 (批量輸入請用逗號隔開，如：R1, R2, B1)</summary>
+        <summary class="admin-summary">
+            <span>⚙️ 庫存清單管理 Inventory Management</span>
+            <span style="font-size: 12px; font-weight: normal;">(批量輸入請用逗號隔開 Batch input via comma, e.g., R1, R2, B1)</span>
+        </summary>
         <div class="admin-content">
             <form method="POST" class="add-form">
-                <input type="text" name="box_name" placeholder="R1, B2, G3, R4..." required class="admin-input">
-                <button type="submit" name="add_box" class="btn-add-box" style="background: #2d3748; color: white; padding: 8px 25px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;">批量建立</button>
+                <input type="text" name="box_name" placeholder="R1, B2, G3..." required class="admin-input">
+                <button type="submit" name="add_box" class="btn-add-box" style="background: #2d3748; color: white; padding: 8px 25px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;">批量建立 Batch Create</button>
             </form>
             <div class="box-manager-list">
                 {% set all_boxes = in_use_boxes + available_boxes %}
                 {% for b in all_boxes|sort(attribute='box_name') %}
                 <div class="manage-item">
                     <span style="font-size:12px; font-weight:bold;">{{ b.box_name }}</span>
-                    {% if b.user_name %}<span style="color:#a0aec0; font-size:12px;">🔒</span>
+                    {% if b.user_name %}<span style="color:#a0aec0; font-size:12px;" title="使用中 In Use">🔒</span>
                     {% else %}
-                    <form method="POST" onsubmit="return confirm('確定刪除 {{ b.box_name }}？')" style="margin:0;">
+                    <form method="POST" onsubmit="return confirm('確定刪除 {{ b.box_name }}？ \nConfirm delete box {{ b.box_name }}?')" style="margin:0;">
                         <input type="hidden" name="box_id" value="{{ b.id }}">
                         <button type="submit" name="delete_box" class="btn-del-text">×</button>
                     </form>
@@ -139,20 +156,16 @@
 </div>
 
 <script>
-    // --- 管理面板自動化行為 ---
     const adminPanel = document.getElementById('adminPanel');
     let timer;
 
-    // 當面板被打開或有任何活動（滑鼠移動、按鍵）時，重置計時器
     function startTimer() {
         clearTimeout(timer);
         if (adminPanel.open) {
-            // 如果 15 秒內無人操作，則自動關閉管理面板以節省畫面空間並防止誤觸
             timer = setTimeout(() => { adminPanel.open = false; }, 15000);
         }
     }
 
-    // 監聽面板狀態切換及各種使用者活動
     adminPanel.addEventListener('toggle', startTimer);
     ['mousemove', 'keydown', 'click'].forEach(e => adminPanel.addEventListener(e, startTimer));
 </script>
