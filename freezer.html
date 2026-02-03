@@ -1,14 +1,25 @@
 {% extends "layout.html" %}
 {% block content %}
 <style>
-    /* 基礎佈局：限制頁面高度為視窗的 85%，並使用彈性佈局 */
+    /* 基礎佈局：限制頁面高度為視窗的 85% */
     .freezer-page { height: 85vh; display: flex; flex-direction: column; gap: 15px; }
+    
+    /* 核心修改：大螢幕橫向，小螢幕縱向 */
     .main-layout { display: flex; gap: 20px; flex: 1; min-height: 0; }
 
-    /* 左右分流群組樣式：分為「使用中」與「可借用」兩區 */
-    .status-group { flex: 1; border-radius: 20px; border: 1px solid #eee; padding: 15px; display: flex; flex-direction: column; overflow: hidden; }
-    .group-inuse { background-color: #fffaf0; border-color: #fbd38d; } /* 使用中區域背景為米黃色 */
-    .group-available { background-color: #ebf8ff; border-color: #90cdf4; } /* 可借用區域背景為淡藍色 */
+    /* 左右分流群組樣式 */
+    .status-group { 
+        flex: 1; 
+        border-radius: 20px; 
+        border: 1px solid #eee; 
+        padding: 15px; 
+        display: flex; 
+        flex-direction: column; 
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); 
+    }
+    .group-inuse { background-color: #fffaf0; border-color: #fbd38d; } 
+    .group-available { background-color: #ebf8ff; border-color: #90cdf4; } 
 
     .status-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #4a5568; }
     .dot { width: 4px; height: 16px; border-radius: 2px; }
@@ -21,24 +32,17 @@
         aspect-ratio: 1/1; border-radius: 12px; border: 1.5px solid #e2e8f0;
         position: relative; display: flex; flex-direction: column;
         align-items: center; justify-content: center; padding: 5px;
-        transition: transform 0.1s; background: #ffffff; text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        transition: all 0.2s ease; background: #ffffff; text-align: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08); 
     }
-    .box-square:hover { transform: translateY(-2px); z-index: 5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .box-square:hover { transform: translateY(-4px); z-index: 5; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); }
 
-    /* --- 核心邏輯：顏色識別標籤 (已修改為百分比縮放) --- */
+    /* 顏色識別標籤 */
     .color-indicator { 
-        position: absolute; 
-        top: 6%; 
-        right: 6%; 
-        width: 12%; 
-        height: 12%; 
-        border-radius: 50%; 
-        border: 1px solid rgba(0,0,0,0.1); 
-        background-color: #cbd5e0 !important; 
-        z-index: 3;
+        position: absolute; top: 6%; right: 6%; width: 12%; height: 12%; 
+        border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); 
+        background-color: #cbd5e0 !important; z-index: 3;
     }
-    /* 這裡使用了屬性選取器 data-name^="字母" (不分大小寫 i) */
     .box-square[data-name^="r" i] .color-indicator { background-color: #f56565 !important; }
     .box-square[data-name^="y" i] .color-indicator { background-color: #f6e05e !important; }
     .box-square[data-name^="b" i] .color-indicator { background-color: #4299e1 !important; }
@@ -53,29 +57,49 @@
     .box-name { font-size: 14px; font-weight: 800; color: #2d3748; }
     .box-user { font-size: 12px; color: #4a5568; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 90%; margin-top: 2px; }
     .day-info { font-size: 10px; margin-top: 3px; transform: scale(0.95); }
-    .text-overdue { color: #c53030; font-weight: 900; } /* 逾期天數顯示紅色 */
-    .text-safe { color: #2f855a; font-weight: 600; }    /* 正常天數顯示綠色 */
+    .text-overdue { color: #c53030; font-weight: 900; }
+    .text-safe { color: #2f855a; font-weight: 600; }
 
-    /* 逾期動畫：當借用超過 7 天時會呈現紅框閃爍警示 */
+    /* 逾期動畫 */
     @keyframes alarm-blink { 0% { border-color: #e2e8f0; } 50% { border-color: #f56565; box-shadow: 0 0 10px rgba(245,101,101,0.4); } 100% { border-color: #e2e8f0; } }
     .is-overdue { animation: alarm-blink 1.5s infinite; border-width: 2.5px !important; }
-    
-    /* 覆蓋層按鈕：讓整個方塊都可以被點擊，而不影響內文排版 */
     .overlay-btn { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; border: none; cursor: pointer; z-index: 2; }
 
-    /* 底部管理面板修正 (摺疊面板式設計) */
-    .admin-details { margin-top: 15px; border-radius: 15px; background: #edf2f7; border: 1px solid #cbd5e0; flex-shrink: 0; }
+    /* 底部管理面板 */
+    .admin-details { margin-top: 15px; border-radius: 15px; background: #edf2f7; border: 1px solid #cbd5e0; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .admin-summary { padding: 12px 20px; background: #e2e8f0; cursor: pointer; font-size: 15px; font-weight: bold; color: #2d3748; list-style: none; display: flex; justify-content: space-between; border-radius: 15px; }
     .admin-details[open] .admin-summary { border-radius: 15px 15px 0 0; }
-    
     .admin-content { padding: 15px; display: flex; flex-direction: column; gap: 15px; max-height: 220px; overflow-y: auto; }
     .add-form { display: flex; gap: 10px; justify-content: center; padding-bottom: 10px; border-bottom: 1px solid #cbd5e0; }
     .admin-input { padding: 8px 15px; border-radius: 8px; border: 1px solid #cbd5e0; width: 450px; }
-    
-    /* 管理清單網格 */
     .box-manager-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-    .manage-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .manage-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
     .btn-del-text { background: none; border: none; color: #e53e3e; cursor: pointer; font-weight: bold; font-size: 18px; }
+
+    /* ==========================================
+       針對手機版 (螢幕寬度小於 768px) 的修正
+       ========================================== */
+    @media (max-width: 767px) {
+        /* 1. 禁用手機字體自動放大 */
+        html { -webkit-text-size-adjust: 100%; }
+
+        /* 2. 將左右佈局改為上下堆疊，並恢復頁面高度自動 */
+        .freezer-page { height: auto; min-height: 100vh; }
+        .main-layout { flex-direction: column; height: auto; }
+        
+        /* 3. 調降手機版的字體大小 */
+        .status-title { font-size: 16px; }
+        .box-name { font-size: 11px; }
+        .box-user { font-size: 9px; }
+        .day-info { font-size: 8px; }
+
+        /* 4. 手機上一排改為 4 個盒子，避免太擠 */
+        .box-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+
+        /* 5. 調整管理面板寬度 */
+        .admin-input { width: 100%; }
+        .add-form { flex-direction: column; }
+    }
 </style>
 
 <div class="freezer-page">
@@ -93,12 +117,12 @@
                     <div class="box-user">{{ b.user_name }}</div>
                     <div class="day-info">
                         {% if b.days_used >= 7 %}
-                            <span class="text-overdue">逾期 Overdue {{ b.overdue_days }}d</span>
+                            <span class="text-overdue">逾期 {{ b.overdue_days }}d</span>
                         {% else %}
-                            <span class="text-safe">已借 Used {{ b.days_used }}d</span>
+                            <span class="text-safe">已借 {{ b.days_used }}d</span>
                         {% endif %}
                     </div>
-                    <form method="POST" onsubmit="return confirm('確認歸還「{{ b.box_name }}」？ \nConfirm return of box {{ b.box_name }}?')">
+                    <form method="POST" onsubmit="return confirm('確認歸還「{{ b.box_name }}」？')">
                         <input type="hidden" name="box_id" value="{{ b.id }}"><button type="submit" name="return_box" class="overlay-btn"></button>
                     </form>
                 </div>
@@ -118,7 +142,7 @@
                     <div class="box-name">{{ b.box_name }}</div>
                     <form method="POST">
                         <input type="hidden" name="box_id" value="{{ b.id }}">
-                        <button type="submit" name="use_box" class="overlay-btn" {% if not current_user %}onclick="alert('請先選取使用者！ \nPlease select a user first!'); return false;"{% endif %}></button>
+                        <button type="submit" name="use_box" class="overlay-btn" {% if not current_user %}onclick="alert('請先選取使用者！'); return false;"{% endif %}></button>
                     </form>
                 </div>
                 {% endfor %}
@@ -128,22 +152,22 @@
 
     <details class="admin-details" id="adminPanel">
         <summary class="admin-summary">
-            <span>⚙️ 庫存清單管理 Inventory Management</span>
-            <span style="font-size: 12px; font-weight: normal;">(批量輸入請用逗號隔開 Batch input via comma, e.g., R1, R2, B1)</span>
+            <span>⚙️ 庫存清單管理</span>
+            <span style="font-size: 14px; font-weight: normal;">(批次輸入用逗號隔開)</span>
         </summary>
         <div class="admin-content">
             <form method="POST" class="add-form">
                 <input type="text" name="box_name" placeholder="R1, B2, G3..." required class="admin-input">
-                <button type="submit" name="add_box" class="btn-add-box" style="background: #2d3748; color: white; padding: 8px 25px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;">批量建立 Batch Create</button>
+                <button type="submit" name="add_box" class="btn-add-box" style="background: #2d3748; color: white; padding: 8px 25px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;">建立</button>
             </form>
             <div class="box-manager-list">
                 {% set all_boxes = in_use_boxes + available_boxes %}
                 {% for b in all_boxes|sort(attribute='box_name') %}
                 <div class="manage-item">
-                    <span style="font-size:12px; font-weight:bold;">{{ b.box_name }}</span>
-                    {% if b.user_name %}<span style="color:#a0aec0; font-size:12px;" title="使用中 In Use">🔒</span>
+                    <span style="font-size:11px; font-weight:bold;">{{ b.box_name }}</span>
+                    {% if b.user_name %}<span style="color:#a0aec0; font-size:12px;">🔒</span>
                     {% else %}
-                    <form method="POST" onsubmit="return confirm('確定刪除 {{ b.box_name }}？ \nConfirm delete box {{ b.box_name }}?')" style="margin:0;">
+                    <form method="POST" onsubmit="return confirm('確定刪除？')" style="margin:0;">
                         <input type="hidden" name="box_id" value="{{ b.id }}">
                         <button type="submit" name="delete_box" class="btn-del-text">×</button>
                     </form>
@@ -167,6 +191,6 @@
     }
 
     adminPanel.addEventListener('toggle', startTimer);
-    ['mousemove', 'keydown', 'click'].forEach(e => adminPanel.addEventListener(e, startTimer));
+    ['mousemove', 'keydown', 'click', 'touchstart'].forEach(e => adminPanel.addEventListener(e, startTimer));
 </script>
 {% endblock %}
