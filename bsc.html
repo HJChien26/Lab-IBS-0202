@@ -2,17 +2,20 @@
 {% block content %}
 <style>
     :root {
+        /* 全域樣式變數定義 */
         --border-color: #6b7280; 
         --inner-border-color: #d1d5db;
 
+        /* 四台 BSC 預約設備的主題配色 */
         --bsc1-color: #3498db; 
         --bsc2-color: #2ecc71; 
         --bsc3-color: #f39c12; 
         --bsc4-color: #9b59b6;
         --grid-font-size: 13px;
-        --now-border: #2563eb;
+        --now-border: #2563eb; /* 標示「現在時間」的框線顏色 */
     }
 
+    /* 頁面整體佈局控制 */
     .full-page-wrapper {
         height: auto; 
         max-height: 100vh;
@@ -23,6 +26,7 @@
         box-sizing: border-box;
     }
 
+    /* 頂部 Tab 選項卡容器 */
     .tab-container { 
         display: flex; 
         gap: 6px; 
@@ -33,6 +37,7 @@
         flex-shrink: 0;
     }
 
+    /* Tab 基本樣式與選取效果 */
     .tab { 
         padding: 8px 24px; 
         cursor: pointer; 
@@ -44,13 +49,13 @@
         color: #4b5563; 
         transition: all 0.2s ease;
         opacity: 0.9;
-        
         user-select: none; 
         -webkit-user-select: none;
     }
 
     .tab:hover { opacity: 1; background: #e5e7eb; }
 
+    /* 啟用狀態的 Tab 樣式，並根據 data-bsc 屬性變換上方框線顏色 */
     .tab.active { 
         background: #fff; 
         color: #111827; 
@@ -69,6 +74,7 @@
     .tab[data-bsc="3"].active { border-top: 4px solid var(--bsc3-color); color: var(--bsc3-color); }
     .tab[data-bsc="4"].active { border-top: 4px solid var(--bsc4-color); color: var(--bsc4-color); }
 
+    /* 表格主要外框 */
     .table-card { 
         background: #fff; 
         border: 1px solid var(--border-color); 
@@ -84,6 +90,7 @@
         z-index: 5;
     }
 
+    /* 標題與按鈕工具列 */
     .info-bar {
         padding: 8px 20px; 
         display: flex; 
@@ -94,19 +101,20 @@
         flex-shrink: 0;
     }
 
+    /* CSS Grid 網格佈局控制 (核心預約表) */
     .grid-wrapper {
         height: auto; 
         max-height: 85vh; 
         overflow: auto; 
         display: grid;
-        grid-template-columns: 100px repeat(14, 1fr); 
+        grid-template-columns: 100px repeat(14, 1fr); /* 時間軸 100px + 14 天等分欄位 */
         grid-auto-rows: 40px; 
         position: relative;
-        
         user-select: none;
         -webkit-user-select: none; 
     }
 
+    /* 儲存格通用樣式 */
     .grid-cell {
         border-right: 1px solid var(--inner-border-color); 
         border-bottom: 1px solid var(--inner-border-color);
@@ -115,8 +123,10 @@
         box-sizing: border-box; 
     }
 
+    /* 固定表頭 (Sticky Header) */
     .header-cell { color: white; font-weight: bold; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     
+    /* 表格左上角交叉儲存格 */
     .corner-cell { 
         background: #f9fafb; color: #374151; position: sticky; top: 0; left: 0; z-index: 20; 
         font-weight: bold;
@@ -124,11 +134,13 @@
         border-right: 1px solid var(--border-color); 
     }
     
+    /* 左側固定時間標籤 */
     .time-label { 
         background: #f9fafb; font-weight: bold; color: #6b7280; position: sticky; left: 0; z-index: 5; font-size: 12px; 
         border-right: 1px solid var(--border-color);
     }
 
+    /* 可互動的預約時段單元格 */
     .slot-cell { 
         cursor: cell; background: #fff; padding: 0 5px; white-space: nowrap;
         overflow: hidden; text-overflow: ellipsis; display: block; 
@@ -138,16 +150,18 @@
     }
     .slot-cell:hover { background-color: #f8fafc; }
 
-    .booked-cell { background: #fee2e2 !important; color: #991b1b !important; font-weight: bold; }
-    .my-cell { background: #fef9c3 !important; color: #854d0e !important; border: 2px solid #facc15 !important; }
+    /* 預約狀態樣式 */
+    .booked-cell { background: #fee2e2 !important; color: #991b1b !important; font-weight: bold; } /* 已被預約 */
+    .my-cell { background: #fef9c3 !important; color: #854d0e !important; border: 2px solid #facc15 !important; } /* 我的預約 */
     
-    /* ★ 修改：移除 outline (虛線)，只保留背景色 */
+    /* 滑鼠拖曳選取中的樣式 */
     .selecting { 
         background: #bae6fd !important; 
-        outline: none; /* 移除虛線 */
+        outline: none; 
         z-index: 2; 
     }
 
+    /* 當前小時的儲存格特別標示 */
     .slot-cell.is-now { 
         background-color: #eff6ff !important; 
         border: 2px solid var(--now-border) !important;
@@ -159,11 +173,13 @@
         z-index: 9; 
     }
 
+    /* 「Now」標籤文字樣式 */
     .now-tag {
         position: absolute; width: 100%; text-align: center; font-weight: 900;
         color: var(--now-border); pointer-events: none; bottom: 2px; font-size: 10px; line-height: 1;
     }
 
+    /* 強制底部間距填充 */
     .bottom-padding-force {
         height: 20px; 
         width: 100%;
@@ -206,9 +222,9 @@
                             {% set slot_key = (d, h) %}
                             {% set res_user = booked[bsc_id].get(slot_key, "") %}
                             <div class="grid-cell slot-cell {{ 'booked-cell' if res_user }} {{ 'my-cell' if res_user == current_user }}"
-                                 data-bsc="{{ bsc_id }}" data-date="{{ d.strftime('%Y-%m-%d') }}" data-slot="{{ h }}"
-                                 data-owner="{{ 'me' if res_user == current_user else ('others' if res_user else 'none') }}"
-                                 title="{{ res_user }}">
+                                  data-bsc="{{ bsc_id }}" data-date="{{ d.strftime('%Y-%m-%d') }}" data-slot="{{ h }}"
+                                  data-owner="{{ 'me' if res_user == current_user else ('others' if res_user else 'none') }}"
+                                  title="{{ res_user }}">
                                 {{ res_user }}
                             </div>
                         {% endfor %}
@@ -224,31 +240,42 @@
 
 <script>
     let isMouseDown = false;
-    let mode = null;
-    let selectedSlots = new Set();
+    let mode = null; // 決定目前動作是「預約(reserve)」或「取消(cancel)」
+    let selectedSlots = new Set(); // 記錄目前被框選的時段組合
 
+    // 初始化滑鼠選取功能：支援滑鼠按下並拖曳選取
     function initSelection() {
         document.querySelectorAll('.slot-cell').forEach(cell => {
             cell.addEventListener('mousedown', (e) => {
+                // 檢查是否有登入使用者
                 if ("{{ current_user }}" === "") return alert("請先選取使用者！");
+                
                 isMouseDown = true;
                 const owner = cell.dataset.owner;
+                
+                // 邏輯判定：點擊空白處則為預約，點擊自己的區域則為取消
                 if (owner === 'none') mode = 'reserve';
                 else if (owner === 'me') mode = 'cancel';
-                else { isMouseDown = false; return; }
+                else { isMouseDown = false; return; } // 他人的預約不能選取
+                
                 toggleCell(cell);
             });
             cell.addEventListener('mouseenter', () => {
+                // 滑鼠拖曳經過時持續變更狀態
                 if (isMouseDown && mode) toggleCell(cell);
             });
         });
     }
 
+    // 全域監聽滑鼠放開，停止選取
     document.addEventListener('mouseup', () => { isMouseDown = false; });
 
+    // 切換儲存格的選取視覺狀態
     function toggleCell(cell) {
         const id = `${cell.dataset.bsc}|${cell.dataset.date}|${cell.dataset.slot}`;
         const owner = cell.dataset.owner;
+        
+        // 確保操作符合當前的模式 (不能混雜預約與取消)
         if ((mode === 'reserve' && owner === 'none') || (mode === 'cancel' && owner === 'me')) {
             if (selectedSlots.has(id)) {
                 selectedSlots.delete(id);
@@ -260,6 +287,7 @@
         }
     }
 
+    // 取得當前電腦時間並在畫面上標記「Now」
     function markCurrentTime() {
         const now = new Date();
         const y = now.getFullYear();
@@ -273,6 +301,7 @@
             const tag = cell.querySelector('.now-tag');
             if (tag) tag.remove();
 
+            // 若日期與小時皆相符，則加上視覺標記
             if (cell.dataset.date === todayStr && parseInt(cell.dataset.slot) === currentHour) {
                 cell.classList.add('is-now');
                 const tagSpan = document.createElement('div');
@@ -283,6 +312,7 @@
         });
     }
 
+    // 將選取的時段打包成 JSON 並發送至後端 API
     async function submitBatch() {
         if (selectedSlots.size === 0) return alert("尚未選取任何時段");
         const data = Array.from(selectedSlots).map(s => {
@@ -294,30 +324,36 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ items: data })
         });
-        if (response.ok) window.location.reload();
+        if (response.ok) window.location.reload(); // 完成後重新載入頁面同步資料
     }
 
+    // 切換 BSC 分頁的顯示邏輯
     function openTab(evt, tabId) {
+        // 切換面板顯示
         document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = "none");
         document.querySelectorAll('.tab').forEach(t => t.classList.remove("active"));
         document.getElementById(tabId).style.display = "block";
         evt.currentTarget.classList.add("active");
         
+        // 動態變更 UI 顏色 (與 BSC 配色一致)
         const bscNum = tabId.replace('bsc', '');
         const title = document.getElementById('table-title');
         const submitBtn = document.getElementById('submit-btn');
-        
         const activeColor = getComputedStyle(document.documentElement).getPropertyValue(`--bsc${bscNum}-color`).trim();
+        
         title.innerText = `BSC ${bscNum} 預約表 / Booking Table`;
         title.style.color = activeColor;
         submitBtn.style.background = activeColor;
         
+        // 切換頁面時自動清空目前暫存的選取狀態，防止誤送
         selectedSlots.clear();
         document.querySelectorAll('.slot-cell').forEach(c => c.classList.remove('selecting'));
     }
 
+    // 啟動功能
     initSelection();
     markCurrentTime();
+    // 每 30 秒自動更新一次「Now」標籤的位置
     setInterval(markCurrentTime, 30000);
 </script>
 {% endblock %}
