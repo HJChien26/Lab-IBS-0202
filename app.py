@@ -196,28 +196,54 @@ def freezer():
 
 # --- IHC 染色系統 ---
 
-@app.route('/ihc', methods=['GET', 'POST'])
+@app.route('/ihc')
 def ihc():
-    """管理 IHC 染色設備預約，限制每日單一時段的總盤數"""
+    """顯示 IHC 預約頁面"""
     today = datetime.now().date()
+    # 產生未來 14 天日期
+    dates = [today + timedelta(days=i) for i in range(14)]
     
-    if request.method == 'POST' and session.get('user'):
-        slot, trays = request.form.get('slot'), int(request.form.get('trays'))
-        # 查詢該時段已預約的總盤數
-        existing = db.session.query(db.func.sum(IHCReservation.trays)).filter_by(date=today, time_slot=slot).scalar() or 0
-        
-        # 邏輯限制：單一時段上限 3 盤
-        if existing + trays <= 3:
-            db.session.add(IHCReservation(date=today, time_slot=slot, trays=trays, user_name=session['user']))
-            db.session.commit()
-        return redirect(url_for('ihc'))
-    
-    # 定義時段清單
+    # 定義時段 (對應前端的 3 盤系統)
     slots = ['AM1', 'AM2', 'AM3', 'PM1', 'PM2', 'PM3']
-    # 計算每個時段的目前盤數加總
-    usage = {s: (db.session.query(db.func.sum(IHCReservation.trays)).filter_by(date=today, time_slot=s).scalar() or 0) for s in slots}
     
-    return render_template('ihc.html', today=today, usage=usage, slots=slots)
+    # 撈取預約資料並整理成前端需要的格式: { "2023-10-01": { "AM1": "UserA" } }
+    all_res = IHCReservation.query.filter(IHCReservation.date >= today).all()
+    booked_data = {}
+    for r in all_res:
+        d_str = r.date.strftime('%Y-%m-%d')
+        if d_str not in booked_data:
+            booked_data[d_str] = {}
+        booked_data[d_str][r.time_slot] = r.user_name
+            
+    return render_template('ihc.html', dates=dates, slots=slots, booked_data=booked_data)
+
+@app.route('/ihc_batch', methods=['POST'])
+def ihc_batch():
+    """處理 IHC 批量預約/取消"""
+    if not session.get('user'):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.json
+    action = data.get('action')
+    target_date = datetime.strptime(data.get('date'), '%Y-%m-%d').date()
+    slot = data.get('slot')
+    current_user = session['user']
+
+    if action == 'book':
+        # 檢查是否已被預約
+        exists = IHCReservation.query.filter_by(date=target_date, time_slot=slot).first()
+        if not exists:
+            # 這裡預設 trays 為 1，因為前端是一格一格選
+            db.session.add(IHCReservation(date=target_date, time_slot=slot, trays=1, user_name=current_user))
+    
+    elif action == 'cancel':
+        # 只能取消自己的
+        res = IHCReservation.query.filter_by(date=target_date, time_slot=slot, user_name=current_user).first()
+        if res:
+            db.session.delete(res)
+            
+    db.session.commit()
+    return jsonify({"status": "success"})
 
 if __name__ == '__main__':
     # 以偵錯模式啟動伺服器
