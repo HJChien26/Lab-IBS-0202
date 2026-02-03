@@ -7,10 +7,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
+            /* 全域配色定義：遵循簡約、高對比的設計原則 */
             --nav-bg: #ffffff;
             --text-main: #202124;
             --text-sub: #5f6368;
-            --accent-blue: #1a73e8;
+            --accent-blue: #1a73e8; /* 連結與選取時的主題藍色 */
             --border-gray: #dadce0;
         }
 
@@ -18,11 +19,11 @@
             margin: 0;
             padding: 0;
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #ffffff; /* 截圖背景多為純白或極淺灰 */
+            background-color: #ffffff; 
             color: var(--text-main);
         }
 
-        /* 導覽列容器 */
+        /* 導覽列容器：固定在頂部 (sticky) 且帶有微陰影 */
         .navbar {
             display: flex;
             justify-content: space-between;
@@ -36,7 +37,7 @@
             z-index: 1000;
         }
 
-        /* 左側標題區 */
+        /* 左側品牌 Logo/標題區 */
         .nav-brand {
             display: flex;
             align-items: center;
@@ -50,7 +51,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* 中間選單連結 (若需要可開啟) */
+        /* 中間導覽連結選單 */
         .nav-links {
             display: flex;
             gap: 25px;
@@ -66,7 +67,7 @@
             color: var(--accent-blue);
         }
 
-        /* 右側操作者選單 */
+        /* 右側操作者選單區：用於快速切換目前使用者 (Session) */
         .user-section {
             display: flex;
             align-items: center;
@@ -95,14 +96,14 @@
             border-color: var(--accent-blue);
         }
 
-        /* 內容容器 */
+        /* 主內容容器：限制最大寬度並置中 */
         .main-content {
             padding: 20px 40px;
             max-width: 1400px;
             margin: 0 auto;
         }
 
-        /* 常用小元件：點 */
+        /* 通用元件：狀態點 (可用於標題前的垂直色條) */
         .status-dot {
             width: 4px;
             height: 18px;
