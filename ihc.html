@@ -91,7 +91,7 @@
     .period-am { background-color: var(--am-side); color: #0277bd; }
     .period-pm { background-color: var(--pm-side); color: #ef6c00; }
 
-    .tray-header { font-weight: bold; width: 85px; font-size: 0.9rem; } /* 稍微加寬以容納 Tray 英文 */
+    .tray-header { font-weight: bold; width: 85px; font-size: 0.9rem; }
     .tray-am { background-color: var(--am-side); }
     .tray-pm { background-color: var(--pm-side); }
 
@@ -115,11 +115,7 @@
             IHC 染色機預約系統
             <span style="font-size: 1rem; font-weight: normal; color: #666; margin-left: 10px;">BOND-MAX Booking System</span>
         </h2>
-        <div style="text-align: right;">
-            操作者 Operator: 
-            <strong style="color: #2c3e50; font-size: 1.3rem;">{{ current_user or '未登入 Guest' }}</strong>
         </div>
-    </div>
 
     <table id="ihc-table">
         <thead>
@@ -172,7 +168,6 @@
 </div>
 
 <script>
-// JS 邏輯保持不變，略
 let isDragging = false;
 let selectedSlots = new Set();
 let dragMode = null; 
